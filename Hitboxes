@@ -1,0 +1,47 @@
+local HitboxModule = {}
+
+function Weld(p1, p2)
+	local Weld = Instance.new("WeldConstraint")
+	Weld.Part0 = p1
+	Weld.Part1 = p2
+	Weld.Parent = p1
+end
+
+function HitboxModule.Init(Character,Size,Type,Damage,Offset,Blockable,Time)
+	local Hitbox = Instance.new("Part")
+	Hitbox.Size = Size
+	Hitbox.Material = Enum.Material.ForceField
+	Hitbox.Color = Color3.new(1, 0, 0)
+	Hitbox.CFrame = Character.HumanoidRootPart.CFrame * Offset
+	Hitbox.Anchored = false
+	Hitbox.CanCollide = false
+	Hitbox.Transparency = 1
+	Hitbox.Parent = workspace
+	
+	Weld(Character.HumanoidRootPart,Hitbox)
+
+	local Debounces = {}
+
+	for i,part in pairs(workspace:GetPartsInPart(Hitbox)) do
+		local Humanoid = part.Parent:FindFirstChild("Humanoid") or part.Parent.Parent:FindFirstChild("Humanoid")
+		if Humanoid and Humanoid.Parent ~= Character and not Debounces[Humanoid] then
+			Debounces[Humanoid] = true
+			local TargetChar = Humanoid.Parent
+
+			if Blockable then
+				if not TargetChar:FindFirstChild("Blocking") then
+					Humanoid.Health = math.max(0, Humanoid.Health - Damage)
+				end
+			else
+				Humanoid.Health = math.max(0, Humanoid.Health - Damage)
+			end
+		end
+	end
+	task.delay(Time, function()
+		Hitbox:Destroy()
+		table.clear(Debounces)
+	end)
+end
+
+
+return HitboxModule
