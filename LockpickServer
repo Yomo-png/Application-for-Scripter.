@@ -1,0 +1,132 @@
+local Transform = require(game.ReplicatedStorage.Modules:FindFirstChild("Transform")) 
+local Randomize = require(game.ReplicatedStorage.Modules.RandomKey)
+local Event = game.ReplicatedStorage.Remotes:FindFirstChild("Lockpick")
+
+local Proximity = script.Parent.ProximityPrompt
+local Lockpick = script.Parent.Parent
+local Drivers = Lockpick.Drivers
+local Pushes = Lockpick.Pushes
+local Pick = Lockpick.Pick
+
+local Position = 1
+local Completed = false
+local IsInMinigame = false 
+local Moving = false
+local Prog = 1
+local SDistance = (Drivers.Second.Position - Drivers.First.Position).X
+local InputZ = false
+
+Randomize:Init(Lockpick)
+
+function GetCurrentKey(Number)
+	if Number == 1 then
+		return "First"
+	elseif Number == 2 then
+		return "Second"
+	elseif Number == 3 then
+		return "Third"
+	elseif Number == 4 then
+		return "Fourth"
+	elseif Number == 5 then
+		return "Fifth"
+	end
+end
+
+function Complete(Char)
+	Completed = true
+	Proximity.Enabled = false
+	Char:SetAttribute("Lockpicking", false)
+end
+
+function Fail(Char)
+	Completed = false
+	Char:SetAttribute("Lockpicking", false)
+end
+
+function Input(Pick,Push,Driver,Option)
+	if Moving then return end
+	InputZ = true
+	local speed = 0.5
+	if Option == true then
+		Transform:Move(Pick, speed, Pick.CFrame * CFrame.new(0, 2, 0), "Smooth")
+		Transform:Move(Push, speed, Push.CFrame * CFrame.new(0, 2, 0), "Smooth")
+		Transform:Move(Driver, speed, Driver.CFrame * CFrame.new(0, 2, 0), "Smooth")
+
+		wait(speed + 0.05)
+
+		Transform:Move(Pick, speed, Pick.CFrame * CFrame.new(0, -2, 0), "Smooth")
+		Transform:Move(Push, speed, Push.CFrame * CFrame.new(0, -2, 0), "Smooth")
+		
+		wait(speed)
+
+		InputZ = false
+	else
+		Transform:Move(Pick, speed, Pick.CFrame * CFrame.new(0, 2, 0), "Smooth")
+		Transform:Move(Push, speed, Push.CFrame * CFrame.new(0, 2, 0), "Smooth")
+		Transform:Move(Driver, speed, Driver.CFrame * CFrame.new(0, 2, 0), "Smooth")
+		
+		wait(speed + 0.05)
+		
+		Transform:Move(Pick, speed, Pick.CFrame * CFrame.new(0, -2, 0), "Smooth")
+		Transform:Move(Push, speed, Push.CFrame * CFrame.new(0, -2, 0), "Smooth")
+		Transform:Move(Driver, speed, Driver.CFrame * CFrame.new(0, -2, 0), "Smooth")
+		
+		wait(speed)
+		
+		InputZ = false
+	end
+end
+
+Proximity.Triggered:Connect(function(player)
+	if Completed then return end
+	if IsInMinigame then return end
+	local Character = player.Character
+	if Character:SetAttribute("Lockpicking") then return end
+	
+	Proximity.Enabled = false
+	IsInMinigame = true
+	Character:SetAttribute("Lockpicking", true)
+	
+	Event.OnServerEvent:Connect(function(player, action)
+		if Moving then return end
+
+		local speed = 0.5
+
+		if action == "Left" then
+			if Position == 1 then return end
+			if InputZ then return end
+			Position -= 1
+			Moving = true
+			Transform:Move(Pick, speed, Pick.CFrame * CFrame.new(-SDistance, 0, 0), "Smooth")
+			task.wait(speed)
+			Moving = false
+			
+			if Prog == 6 then
+				Complete(Character)
+			end
+		elseif action == "Right" then
+			if Position == 5 then return end
+			if InputZ then return end
+			Position += 1
+			Moving = true
+			Transform:Move(Pick, speed, Pick.CFrame * CFrame.new(SDistance, 0, 0), "Smooth")
+
+			task.wait(speed)
+			Moving = false
+			
+			if Prog == 5 then
+				Complete(Character)
+			end
+		elseif action == "Click" then
+			local Driver = Drivers[GetCurrentKey(Position)]
+			local Push = Pushes[Driver.Name]
+			
+			if Driver:GetAttribute("Key") == Prog then
+				Prog += 1
+				Input(Pick, Push, Driver, true)
+			else
+				Input(Pick, Push, Driver, false)
+			end
+		end
+	end)
+end)
