@@ -1,0 +1,89 @@
+local CombatClient = {}
+
+local Players = game:GetService("Players")
+local Player = game.Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+local AnimFolder = ReplicatedStorage:WaitForChild("Animations")
+local ClickEvent = Remotes:WaitForChild("ClickEvent")
+local Count = 0
+local Turn = 0
+local LoadedEvent = Remotes:WaitForChild("Loaded")
+local Loaded = false
+
+LoadedEvent.OnClientEvent:Connect(function()
+	Loaded = true
+end)
+
+function OnCharacterAdded(Player)
+	local Character = Player.Character
+end
+
+function ApplyCooldown(Lenght)
+	Cooldown = true
+	task.wait(Lenght)
+	Cooldown = false
+end
+
+function ResetAnimOnIdle()
+	local Current = Count
+	local CurrnetTurn = Turn
+	wait(1)
+	if Count == Current and Turn == CurrnetTurn then
+		Count = 0
+		print("reset")
+	end
+end
+
+function GetAttackType(Char)
+	local Humanoid = Char:WaitForChild("Humanoid")
+	if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+		return "Uppercut"
+	elseif Humanoid:GetState() == Enum.HumanoidStateType.Freefall then
+		return "Downslam"
+	else
+		return "Punch"
+	end
+end
+
+UserInputService.InputBegan:Connect(function(Input, Processed)
+	if not Loaded then return end
+	if Processed then return end
+	if Cooldown then return end
+
+	local Character = Player.Character
+	local Humanoid = Character:WaitForChild("Humanoid")
+	local Animator = Humanoid:WaitForChild("Animator")
+
+	if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+		Count += 1
+		local CharAnims = AnimFolder:WaitForChild(Player:GetAttribute("CurrentCharacter"))
+
+		local Type = GetAttackType(Character)
+		ClickEvent:FireServer(Type)
+
+		if Type == "Punch" then
+			print(Count)
+			local Anim = CharAnims.M1s:FindFirstChild(Count)
+			print(Anim.Name)
+			local LoadedAnim = Animator:LoadAnimation(Anim)
+			LoadedAnim:Play()
+		else
+			local Anim = CharAnims:FindFirstChild(Type)
+			local LoadedAnim = Animator:LoadAnimation(Anim)
+			LoadedAnim:Play()
+		end
+
+		if Count >= 4 then
+			Count = 0
+			Turn += 1
+			ApplyCooldown(1)
+		else
+			ApplyCooldown(0.5)
+			ResetAnimOnIdle()
+		end
+	end
+end)
+
+return CombatClient
