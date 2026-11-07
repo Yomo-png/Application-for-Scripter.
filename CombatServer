@@ -1,0 +1,15 @@
+local CombatServer = {}
+
+local ReplicatedStorage = game.ReplicatedStorage
+local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+local ClickEvent = Remotes:WaitForChild("ClickEvent")
+local Hitboxes = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Hitboxes"))
+
+
+ClickEvent.OnServerEvent:Connect(function(Player, Type)
+	if Type == "Punch" then
+		Hitboxes.Init(Player.Character, Vector3.new(5, 5, 5), "Punch", 10, CFrame.new(0, 0, -2), true, 0.5)
+	end
+end)
+
+return CombatServer
