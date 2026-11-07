@@ -1,0 +1,21 @@
+local LockpickClient = {}
+local UserInputService = game:GetService("UserInputService")
+local LockpickEvent = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Lockpick")
+local Player = game.Players.LocalPlayer
+local Character = Player.Character or Player.CharacterAdded:Wait()
+local Lockpicks = game.Workspace:FindFirstChild("Lockpicks")
+local Enabled = false
+
+UserInputService.InputBegan:Connect(function(input,gp)
+	if not Character:GetAttribute("Lockpicking") then return end
+	if gp then return end
+	if input.KeyCode == Enum.KeyCode.R then
+		LockpickEvent:FireServer("Click")
+	elseif input.KeyCode == Enum.KeyCode.Q then
+		LockpickEvent:FireServer("Left")
+	elseif input.KeyCode == Enum.KeyCode.E then
+		LockpickEvent:FireServer("Right")
+	end
+end)
+
+return LockpickClient
